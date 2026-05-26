@@ -12,6 +12,7 @@ array[ROW,COL] of var NUM0: x =
   [(r,c): if filled[r,c] then 0 else clue[r,c] endif | r in ROW, c in COL];
 
 % never black out clues that appear once in row and column
+% a dominance rule for hitori but not the optimisation version
 /*
 include "count.mzn";
 constraint forall(r in ROW, c in COL)
