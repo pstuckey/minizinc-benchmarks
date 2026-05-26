@@ -5,7 +5,7 @@
 This model packs products into shelves in a warehouse.
 
 - Each **product** is a 3D box with fixed `Length`, `Width`, and `Height`.
-- Each **shelf** is also a 3D box with fixed dimensions.
+- Each **shelf** is an identical 3D box with fixed dimensions.
 - Products **cannot be rotated**.
 - The model must place all items so they do not overlap and stay inside shelf bounds.
 - The goal is to use as few shelves as possible.
