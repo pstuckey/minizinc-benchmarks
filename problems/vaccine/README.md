@@ -51,11 +51,38 @@ The data file provides:
 5. **Overlap control between groups**  
    Any two groups may share at most `max_share_vaccines` vaccines.
 
+The constraints on the assigment are as follows:
+- In order for the tests to be reliable we need to replicate the test on at least `minsize` people in
+each group. So we cant assign a number of vaccines to a group bigger than the size dictates.
+- To find the eﬀect of vaccines on diﬀerent ages the decision must balance vaccine applications
+across the age types. Since the number of groups of each age type are very diﬀerent we give
+minimum `age_group_min` and maximum `age_group_max` for the each age type. Each vaccine
+must be applied to a number of groups for each age type within these bounds.
+- If a group is tested with `k` vaccines then the number of people tested for each vaccine is
+`size div k`, that is each vaccine is applied evenly. We want to balance the number of people
+trialed for each vaccine. The total number of people trialed for any pair of vaccines cannot
+be more than `max_people_diff`;
+- To avoid any possibility that the trial is gender biased for each gender type we must have
+exactly the same number of groups of that type for each vaccine.
+- To improve the statistical predictive ability of the trial we need to spread out the use of
+vaccines across diﬀerent groups. For any two groups the maximum number of vaccines they
+can share is at most `max_share_vaccines`.
+
+
 ## Objective
-The model computes `information[v]` for each vaccine and then maximizes:
-- `objective = min(information)`
+
+The objective of the trial is to discover the most information possible. The eﬀectiveness of the
+vaccine will be tested most eﬃciently in participants with lower health and higher exposure, since
+here the statistical likelihood of the participant being critically eﬀected by COVID-19 is higher.
+The information gain for each vaccine in the trial is calculated as by adding the information
+value for each group by its health and exposure. 
+
+For a group `g` treated with vaccine `v` we gain information about that vaccine equal to the
+`health_information[g] × exposure_information[g]`
+units. The objective is to maximise the minimum information gain over all vaccines.
 
 So it is a **max–min objective**: improve the *worst* information score among all vaccines, making the trial robustly informative rather than optimizing only the best vaccine.
+
 
 ## About uncertainty / modeling assumptions
 This is a planning model under uncertainty in real-world outcomes. It does **not** simulate biological efficacy directly; instead it uses proxy information scores (`health_information × exposure_information`).
