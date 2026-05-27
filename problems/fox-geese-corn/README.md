@@ -10,6 +10,31 @@ This MiniZinc model describes a generalized river-crossing problem based on the 
 
 The setting has two river banks, which the model tracks as **west** and **east**. Initially, all items start on the west bank. Odd-numbered trips move items from west to east, and even-numbered trips move items back from east to west. This means the model can use return trips when that helps preserve or improve the final outcome.
 
+Every one knows the puzzle of a farmer with a fox, a goose, and a bag of corn to take to the market.
+She has to cross the river with a boat that can carry one object, if she ever leaves the fox with the
+goose, the goose is eaten, or the goose with the corn the corn is eaten, and she has to get everything
+across the river. This is a generalization of that problem.
+The farmer has `f` foxes, `g` geese, and `c` bags of corn on the west side of the river. She has a
+boat that can carry `k` objects (any mix of types is allowable) and the time to make `t` trips. Note
+that the first trip is west to east, then the second trip is east to west, then the third trip is west
+to east, etc. When ever the farmer leaves some goods alone on either side of the river then by the
+time she returns the following happens,
+- if there is only one kind of good, nothing.
+- if there are only foxes and corn, out of boredom one fox eats a bag of corn, its stomach
+explodes and it dies.
+- if there are foxes and geese,
+   * if there are more foxes than geese one fox dies in argument over geese, no geese die, and
+no geese eat any corn
+   * if there are no more foxes than geese, each fox eats a goose, and no geese eat any corn.
+- if there are no foxes but there is geese and corn,
+   * if there is no more geese than corn each goose eats a bag of corn
+   * otherwise all the geese fight, one dies and one bag of corn is eaten.
+     
+Once she has completed her last trip then the farmer can take the goods from the east side to the
+market where she receives `pf` for each fox, `pg` for each goose and `pc` for each corn. The aim is to
+maximize profit.
+
+
 ## What the model is solving
 
 The model is not simply trying to move everything across. Instead, it is solving an **optimization** problem: it chooses a transport plan that maximizes the total value of the items that remain safely on the east bank at the end.
@@ -51,7 +76,7 @@ The model enforces several simple but important rules:
    After each trip, the west-bank and east-bank inventories are updated to reflect what was transported.
 
 4. **Unattended-bank losses**  
-   The predicate `alone(...)` determines what survives on the bank that has been left without supervision. This is the key rule that captures the fox/geese/corn interactions.
+   The predicate `alone(...)` determines what survives on the bank that has been left without supervision. This is the key rule that captures the fox/geese/corn interactions described above.
 
 5. **Boat capacity**  
    For every trip, the total number of transported items must satisfy
@@ -74,7 +99,6 @@ So the best solution is the one that leaves the most valuable combination of sur
 
 - This is best understood as a **generalized optimization version** of the classic river-crossing puzzle, not just the usual yes/no feasibility puzzle.
 - The exact loss behavior is defined directly by the `alone(...)` predicate. Some of those rules are more detailed than the usual textbook statement of the puzzle, so anyone reusing the model should read that predicate carefully.
-- I could not confirm a specific academic paper from the model file alone. It appears to be derived from the well-known fox–goose–corn family of river-crossing puzzles, but a domain expert may be able to identify a more precise source.
 
 ## Related background
 
