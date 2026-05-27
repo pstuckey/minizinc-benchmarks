@@ -35,12 +35,12 @@ Each voucher in the input can be used **at most once**. If it is used, enough pi
 ### Decision variables
 
 - `how[p]`: describes what happens to pizza `p`.
-  - `0` means the pizza is not attached to any voucher and is paid for normally.
-  - `-v` means the pizza is assigned to the **paid** part of voucher `v`.
-  - `v` means the pizza is assigned to the **free** part of voucher `v`.
+  - `Purchase` means the pizza is not attached to any voucher and is paid for normally.
+  - `B(v)` means the pizza is assigned to the **paid** part of voucher `v`.
+  - `F(v)` means the pizza is assigned to the **free** part of voucher `v`.
 - `used[v]`: true when voucher `v` is actually used.
 
-This signed encoding lets the model represent both sides of a voucher with a single variable for each pizza.
+This model uses an extended enumerated type encoding to represent both sides of a voucher with a single variable for each pizza.
 
 ## Key rules enforced by the model
 
