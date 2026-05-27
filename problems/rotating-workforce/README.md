@@ -42,7 +42,7 @@ Two auxiliary arrays — `plan_sort` (a solver-friendly reordering of `plan`) an
 
 1. **Coverage** — On every day `d`, the number of workers assigned to each shift must equal `temp_req[s, d]` exactly. The `global_cardinality_low_up` global constraint enforces this.
 
-2. **Sequence legality** — A pre-computed deterministic finite automaton (DFA) is applied to the one-dimensional schedule sequence via the `regular` global constraint. The DFA encodes all block-length limits (on-duty minimum/maximum, days-off minimum/maximum, per-shift consecutive limits) and all forbidden shift-to-shift transitions in one pass.
+2. **Sequence legality** — A pre-computed deterministic finite automaton (DFA) is applied to the one-dimensional schedule sequence via the `regular` global constraint. The DFA encodes all block-length limits (on-duty minimum/maximum, days-off minimum/maximum, per-shift consecutive limits) and all forbidden shift-to-shift transitions in one pass. The core challenge of the model is building a correct dfa from the input data about limits.
 
 3. **Cyclic wrap-around** — The first row of `plan` and an appended "extra" row `nb_workers + 1` are forced to be identical, so the schedule connects cleanly at the boundary of the cycle.
 
