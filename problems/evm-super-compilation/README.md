@@ -8,7 +8,13 @@ This model tackles the **EVM super-compilation** (or superoptimization) problem:
 
 This kind of optimization is practically valuable for Ethereum smart contracts, where shorter and cheaper bytecode directly reduces the gas fees users pay for on-chain execution.
 
-The model makes explicit references to a "CAV paper" (Computer-Aided Verification conference), which is likely the primary academic source for this formulation. The exact citation is uncertain — readers with more context should identify and add it here. The work appears to be associated with constraint-based approaches to EVM bytecode optimization, potentially related to work by researchers such as Elvira Albert, Pablo Gordillo, and collaborators on EVM analysis and optimization.
+The model makes explicit references to a "CAV paper" (Computer-Aided Verification conference), which is the primary academic source for this formulation but is actually in PLDI.
+
+- SuperStack: Superoptimization of Stack-Bytecode via Greedy, Constraint-Based, and SAT Techniques.
+  Authors: Elvira Albert, Maria Garcia de la Banda, Alejandro Hernández-Cerezo, Alexey Ignatiev, Albert Rubio, Peter J. Stuckey.
+  Proceedings of the ACM on Programming Languages, Volume 8, Issue PLDI.
+  Article No.: 205, Pages 1437 - 1462
+  https://doi.org/10.1145/3656435
 
 ---
 
@@ -92,8 +98,8 @@ For each solution, the model outputs:
 
 ## References
 
-The model comments reference a "CAV paper" (Computer-Aided Verification) as the source of several constraint rules. This is likely related to constraint-based EVM bytecode superoptimization research. A probable reference is:
-
-> Elvira Albert, Pablo Gordillo, Albert Rubio, Peter Schrammel. _GASOL: Gas Analysis and Optimization for Ethereum Smart Contracts_. Or a related CAV/FMCAD paper on EVM stack optimization.
-
-**Note:** The exact paper citation is uncertain. If you have more context about the origin of this model, please update this section with the correct reference.
+SuperStack: Superoptimization of Stack-Bytecode via Greedy, Constraint-Based, and SAT Techniques.
+  Authors: Elvira Albert, Maria Garcia de la Banda, Alejandro Hernández-Cerezo, Alexey Ignatiev, Albert Rubio, Peter J. Stuckey.
+  Proceedings of the ACM on Programming Languages, Volume 8, Issue PLDI.
+  Article No.: 205, Pages 1437 - 1462
+  https://doi.org/10.1145/3656435
