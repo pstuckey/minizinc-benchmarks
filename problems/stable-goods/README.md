@@ -11,6 +11,41 @@ The model assigns **exactly one acceptable choice** to each person. It must resp
 
 The optimization goal is to leave unused goods of **high value** whenever possible, which is equivalent to maximizing the total value of the remaining stock.
 
+The stable commodity assignment problem is defined as follows. We have a set of people, `PERSON`,
+and a set of goods, `GOOD`. Each person has a ranked list of which `GOOD`s they like and how many
+would make them happy. We have a certain amount available of each good.
+An correct assignment is that each person is given one type of the goods in their preference list,
+and they are given the number they want of that good.
+A stable commodity assignment is a correct assignment, where there is no pair of people and
+goods such that each person would be happier with swapping the good with the other person,
+and we still have enough of each good to do the swap (since the two people may require diﬀerent
+amounts of the good).
+
+The aim is to minimize the total value of goods given to the people while still being a stable
+assignment.
+
+## Parameters
+
+For each good `g` we are given:
+
+- `available[g]`: how much is available
+- `value[g]`: the value of the good
+
+We are given the preferences of all people in one list all together:
+
+- `npref[p]`: defines the number of preferences for person `p`
+- `good_pref[i]`: defines the ith good in the preference list.
+- `req_pref[i]`: defines the number required of the `i`th good in the list
+
+For example with `PERSON = { A, B, C }` and `npref=[4, 1, 2]` the we can interpret the preference list
+
+`good_pref = [ CAR, HOUSE, BOOKS, CASH, HOUSE, CAR, CASH ];`
+
+`req_pref  = [   1,     1,    20, 2000,     1,   2, 5000 ];`
+
+as person A prefers a 1 car, before 1 house before 20 books, before 2000 cash, person B prefers 1 house only, and person C prefers 2 cars to 5000 cash.
+
+
 ## Decision variables
 
 For each person, the model chooses:
@@ -63,11 +98,8 @@ which is the total value of the goods actually assigned, but this is **not** the
 - This is a **combinatorial optimization** model.
 - Preferences are stored in a flattened format, then helper functions reconstruct each person’s list.
 - The model includes an explicit search annotation using `int_search(...)`. Since benchmark descriptions should focus on the problem rather than solver guidance, that search strategy is not part of the conceptual problem statement.
-- The exact economic interpretation of “stable” is inferred from the code. The model clearly captures pairwise stability with limited stock, but the original natural-language specification is not included here, so some interpretation details may be uncertain.
 
 ## Identifiable source / references
-
-No paper or original citation is given inside the model file.
 
 What can be identified from this repository:
 
@@ -75,4 +107,4 @@ What can be identified from this repository:
 - it appears in the MiniZinc benchmark suite,
 - `metadata.json` indicates use in the **MiniZinc Challenge 2020**.
 
-If a more precise academic reference exists, it is not recorded in the local model or metadata available here.
+
