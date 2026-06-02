@@ -6,11 +6,12 @@
 % of ships in each row and column and have to fill it with ships
 
 % "Improved" version does not introduce reified set_in
+% The revised version does
+% rewritten in June 2026 to use enumerated types, and count globals.
 
 int: width;   % height of board (usually 10)
 int: height;  % width of board (usually 10)
 int: maxship; % maximal length of ship (usually 4)
-
 
 set of int: ROWS = 1..width;
 set of int: COLS = 1..height;
@@ -18,127 +19,129 @@ set of int: XROWS = 0..width+1;    % extended rows
 set of int: XCOLS = 0..height+1;   % extended cols
 
 %% ship types enumerated type
-set of int: SHIPS = 1..maxship;  % different ship types
-int: submarine = 1;
-int: destroyer = 2;
-int: cruiser = 3;
-int: battleship = 4;
-
+enum SHIP = S(1..maxship);
+SHIP: submarine  = S(1);
+SHIP: destroyer = S(2);
+SHIP: cruiser = S(3); 
+array[SHIP] of int: length = [ S^-1(s) | s in SHIP ];
 
 %% the PIECES enumerated type!
-set of int: PIECES = 1..7;
-int: w = 1; % water
-int: c = 2; % circle (submarine)
-int: l = 3; % left end of ship
-int: r = 4; % right end of ship
-int: t = 5; % top of ship
-int: b = 6; % bottom of ship
-int: m = 7; % middle of ship
-array[PIECES] of string: code = [".","c","l","r","t","b","m"];
+enum PIECE = { W, C, L, R, T, B, M };
+%int: w = 1; % water
+%int: c = 2; % circle (submarine)
+%int: l = 3; % left end of ship
+%int: r = 4; % right end of ship
+%int: t = 5; % top of ship
+%int: b = 6; % bottom of ship
+%int: m = 7; % middle of ship
+array[PIECE] of string: code = [".","c","l","r","t","b","m"];
 
 array[ROWS,COLS] of 0..7: hint; % the initial board configuration
 array[ROWS] of int: rowsum;     % sums for each row
 array[COLS] of int: colsum;     % sums for each col
-array[SHIPS] of int: ship; % the number of each type of ship (usually [4,3,2,1]).
-
-
+array[SHIP] of int: ship; % the number of each type of ship (usually [4,3,2,1]).
 
 % variables 
-array[XROWS,XCOLS] of var PIECES: board;  % the board
+array[XROWS,XCOLS] of var PIECE: board;  % the board
  
-array[XROWS,XCOLS] of var 0..1: fill;     % which pieces are ships
+array[XROWS,XCOLS] of var bool: fill;     % which pieces are ships
 
-array[PIECES] of var 0..width*height: npiece; % number of pieces of each type
+array[PIECE] of var 0..width*height: npiece; % number of pieces of each type
 
 
 % model
+include "globals.mzn";
 
 % ensure hints are respected
 constraint forall(i in ROWS, j in COLS)(
-			   if hint[i,j] != 0 then
-			   		board[i,j] == hint[i,j]
-			   else true endif
+			   if hint[i,j] > 0 then
+			      board[i,j] == to_enum(PIECE,hint[i,j])
+			   endif
 	       ); 
 
 % make extended rows and cols empty
-constraint forall(i in XROWS)(board[i,0] == w /\ board[i,width+1] == w);
-constraint forall(j in COLS)(board[0,j] == w /\ board[height+1,j] == w);
+constraint forall(i in XROWS)(board[i,0] == W /\ board[i,width+1] == W);
+constraint forall(j in COLS)(board[0,j] == W /\ board[height+1,j] == W);
 
 % ensure that the fill array matches the board
 constraint forall(i in XROWS, j in XCOLS)(
-			   fill[i,j] = bool2int(board[i,j] != w)
+			   fill[i,j] = (board[i,j] != W)
 	       ); 
 
 % spacing constraints: gaps betwen ships
 constraint forall(i in ROWS, j in COLS)(
-	   (board[i,j] == w \/ board[i+1,j+1] == w)
-	/\ (board[i,j] == w \/ board[i+1,j-1] == w)   % diagonal constraints
-            /\ (board[i,j] in {c,l,r,t} -> board[i-1,j] == w)
-            /\ (board[i,j] in {c,l,r,b} -> board[i+1,j] == w)
-            /\ (board[i,j] in {c,l,t,b} -> board[i,j-1] == w)
-            /\ (board[i,j] in {c,r,t,b} -> board[i,j+1] == w)
+	   (board[i,j] == W \/ board[i+1,j+1] == W)
+	/\ (board[i,j] == W \/ board[i+1,j-1] == W)   % diagonal constraints
+       /\ (board[i,j] in {C,L,R,T} -> board[i-1,j] == W)
+       /\ (board[i,j] in {C,L,R,B} -> board[i+1,j] == W)
+       /\ (board[i,j] in {C,L,T,B} -> board[i,j-1] == W)
+       /\ (board[i,j] in {C,R,T,B} -> board[i,j+1] == W)
            );
                			                       
 % ship shape constraints
 constraint forall(i in ROWS, j in COLS)(
                %% a left piece needs a right piece or middle to the right
-			   (board[i,j] == l -> (board[i,j+1] == r \/ board[i,j+1] == m))
-			/\ (board[i,j] == r -> (board[i,j-1] == l \/ board[i,j-1] == m))
-			/\ (board[i,j] == t -> (board[i+1,j] == b \/ board[i+1,j] == m))
-			/\ (board[i,j] == b -> (board[i-1,j] == t \/ board[i-1,j] == m))
+			   (board[i,j] == L -> board[i,j+1] in {R,M})
+			/\ (board[i,j] == R -> board[i,j-1] in {L,M})
+			/\ (board[i,j] == T -> board[i+1,j] in {B,M})
+			/\ (board[i,j] == B -> board[i-1,j] in {T,M})
 			   %% a middle piece has to have two opposite sides filled
-			/\ (board[i,j] == m -> (   fill[i-1,j] == fill[i+1,j]
+			/\ (board[i,j] == M -> (   fill[i-1,j] == fill[i+1,j]
 			                        /\ fill[i,j-1] == fill[i,j+1]
-			                        /\ fill[i-1,j] + fill[i,j-1] == 1))
+			                        /\ (fill[i-1,j] xor fill[i,j-1])))
 		   );
 		   
 % sum up pieces
-constraint forall(p in PIECES)(
-			   sum(i in ROWS, j in COLS)(bool2int(board[i,j] == p)) == npiece[p]
+constraint forall(p in PIECE)(
+			   npiece[p] = count_eq(board,p)
 		   );
 
 % piece sum constraints
-constraint npiece[c] == ship[submarine]; % submarines
-constraint npiece[l] == npiece[r]; % left right (probably redundant)
-constraint npiece[t] == npiece[b]; % top bottom
-constraint npiece[l] + npiece[t] == sum(s in destroyer..maxship)(ship[s]); 
+constraint npiece[C] == ship[submarine]; % submarines
+constraint npiece[L] == npiece[R]; % left right (probably redundant)
+constraint npiece[T] == npiece[B]; % top bottom
+constraint npiece[L] + npiece[T] == sum(s in destroyer..S(maxship))(ship[s]); 
                                    % no of ends
-constraint npiece[m] == sum(s in cruiser..maxship)(ship[s] * (s - 2)); 
-                                   % no of middles 		   
+constraint npiece[M] == sum(s in cruiser..S(maxship))(ship[s] * (length[s] - 2)); 
+                                   % no of middles 
+% redundant
+constraint sum(npiece) = (width+2)*(height+2);                                   		   
 		    
 % count number of bigger ships
 % at least for standard battleships you can probably simply
 % enforce this constraint for s in destroyer..destroyer		
 % and still be guaranteed a correct solution    
-constraint forall(s in destroyer..maxship)(
-	           sum(i in ROWS,j in COLS)(bool2int(
-			       if j + s - 1 <= width then
-			          board[i,j] == l /\ board[i,j+s-1] == r     % ship length s lr
-			       /\ forall(k in j+1..j+s-2)(board[i,k] == m)
+constraint forall(s in destroyer..S(maxship))(
+                  let { int: ls = length[s]; } in
+	           count(i in ROWS,j in COLS)(
+			       if j + ls - 1 <= width then
+			          board[i,j] == L /\ board[i,j+ls-1] == R     % ship length s lr
+			       /\ forall(k in j+1..j+ls-2)(board[i,k] == M)
 			       else false endif
 			    \/
-			       if i + s - 1 <= height then
-			          board[i,j] == t /\ board[i+s-1,j] == b     % ship length s tb
-			       /\ forall(k in i+1..i+s-2)(board[k,j] == m)
+			       if i + ls - 1 <= height then
+			          board[i,j] == T /\ board[i+ls-1,j] == B     % ship length s tb
+			       /\ forall(k in i+1..i+ls-2)(board[k,j] == M)
 			       else false endif
-		       )) = ship[s]
+		       ) = ship[s]
 		   );		    
 		    		    
 
 % row sums respected
 constraint forall(i in ROWS)(
-               sum(j in COLS)(fill[i,j]) == rowsum[i]
+               count(fill[i,..]) == rowsum[i]
            );
            
 % column sums respected           
 constraint forall(j in COLS)(
-               sum(i in ROWS)(fill[i,j]) == colsum[j]
+               count(fill[..,j]) == colsum[j]
            );           
+
 
 
 solve 
     :: seq_search([
-        int_search([ fill[i,j] | i in ROWS, j in COLS], 
+        bool_search([ fill[i,j] | i in ROWS, j in COLS], 
             input_order, indomain_min, complete),
         int_search([ board[i, j] | i in ROWS, j in COLS], 
             first_fail, indomain_min, complete)
@@ -156,4 +159,4 @@ output [ "% " ] ++ [
 ] ++ [
     "board = array2d(", show(XROWS), ", ", show(XCOLS), ", ", show(board), ");\n"
 ];
-	   
+
