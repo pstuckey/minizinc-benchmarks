@@ -64,7 +64,7 @@ The carpet roll has a **fixed width** (`roll_wid`) and the solver determines the
 2. **Orientation** — each room carpet is placed in one of its permitted orientations; the two boolean helpers `rm_ori_0_or_180` and `rm_ori_0_or_90` together encode which of the four orientations is selected and drive the dimension-swapping logic.
 3. **Offset consistency** — each rectangle of a room carpet is placed at a position determined by the room carpet's origin plus the appropriate orientation-dependent offset.
 4. **Stair partition constraints** — consecutive step-rectangles of the same stair carpet must follow the ordering rules (symmetry breaking), each segment must span at least `st_min_steps` steps, and the total number of cuts must not exceed `st_max_breaks`.
-5. **Cumulative constraints** — applied along both axes to provide resource-level reasoning about how the roll width and length are consumed.
+5. **Cumulative constraints** — redundant constraints applied along both axes to provide resource-level reasoning about how the roll width and length are consumed.
 6. **Non-overlap** — the global `diffn` constraint ensures that no two rectangles (whether from room or stair carpets) overlap on the roll.
 
 ---
@@ -77,10 +77,7 @@ Minimise `objective` — the total length of carpet roll consumed.
 
 ## References
 
-This problem appears to originate from industrial carpet-laying applications and has been used as a benchmark in the context of the **MiniZinc Challenge**. A closely related formulation is described in:
+This problem appears to originate from industrial carpet-laying applications and has been used as a benchmark in the context of the **MiniZinc Challenge**. A paper describing the problem is:
 
-> Simonis, H., & O'Sullivan, B. (2011). _Almost square packing_. In _Proceedings of the 8th International Conference on Integration of AI and OR Techniques in Constraint Programming (CPAIOR 2011)_, Lecture Notes in Computer Science, vol. 6697. Springer.
+> A. Schutt, P.J. Stuckey, and A. Verden. Optimal carpet cutting. In J.H.M. Lee, editor, Proceedings of the 17th International Conference on Principles and Practice of Constraint Programming, volume 6876 of LNCS, pages 69–84. Springer, 2011.
 
-> Belov, G., Kartak, V., Rohling, H., & Scheithauer, G. (2010). _One-dimensional relaxations and LP bounds for orthogonal packing_. _International Transactions in Operational Research_, 16(6), 745–766.
-
-_(Note: the exact provenance of this specific carpet-cutting formulation has not been confirmed. If you know the original source, please update this section.)_
