@@ -8,6 +8,9 @@ The challenge is to find the shortest sequence of legal moves that transforms th
 configuration into the goal configuration, while also minimising the total number of individual
 person movements made along the way.
 
+Modified to be type safe using enumerated types by Peter Stuckey. 
+Note that the input format was not changed but instead type safe versions StartT, GoalT and Can_swapT are created in the model.
+
 This is similar to the classic "15-puzzle" (sliding tile puzzle), but with people and seats,
 and with the added twist that some people can directly swap seats with each other.
 
@@ -25,7 +28,7 @@ and with the added twist that some people can directly swap seats with each othe
 
 | Variable       | Description                                              |
 | -------------- | -------------------------------------------------------- |
-| `seat[i, s]`   | Who sits in seat `s` at step `i` (0 = empty)             |
+| `seat[i, s]`   | Who sits in seat `s` at step `i` (Noone = empty)         |
 | `person[i, p]` | Which seat person `p` occupies at step `i`               |
 | `step`         | The actual number of steps required to reach the goal    |
 | `cost`         | Total number of individual person moves across all steps |
