@@ -14,7 +14,7 @@
 %------------------------------------------------------------------------------%
 % Includes
 
-include "alldifferent_except_0.mzn";
+include "all_different_except.mzn";
 include "alldifferent.mzn";
 
 %------------------------------------------------------------------------------%
@@ -22,16 +22,21 @@ include "alldifferent.mzn";
 
 % number of seats
 int: S;
+enum SEAT = Seat(1..S);
 
 % number of person
 int: P;
+enum PERSON = Person(1..P) ++ { Noone };
+
 
 % flags
 array[1..P] of bool: Can_swap;
+array[PERSON] of bool: Can_swapT = array1d(PERSON, Can_swap ++ [ false ]);
 
 % max step.
 % (keep small to keep search space small)
 int: MAX_STEP = (2 * S) div (S - P + 1) + 1;
+set of int: STEP = 1..MAX_STEP;
 % int: MAX_STEP = (2 * S);
 
 % move cost
@@ -44,16 +49,19 @@ var 0..MAX_STEP: step;
 var 0..MAX_STEP * MAX_STEP * P + MAX_STEP * P : objective;
 
 % state of start and goal
-array[1..S] of int: Start;
-array[1..S] of int: Goal;
+array[SEAT] of int: Start;
+array[SEAT] of int: Goal;
+
+array[SEAT] of PERSON: StartT = [ if Start[s] = 0 then Noone else Person(Start[s]) endif | s in SEAT ];
+array[SEAT] of PERSON: GoalT =  [ if Goal[s] = 0 then Noone else Person(Goal[s]) endif | s in SEAT ];
 
 
 % seat[i, s] means "Who is at s in step i"
 % 0 means "empty seat"
-array[1..MAX_STEP, 1..S] of var 0..P: seat;
+array[STEP, SEAT] of var PERSON: seat;
 
-% person[i, p] means persion "p" is at "person[i, p]" in step i
-array[1..MAX_STEP, 1..P] of var 1..S: person;
+% person[i, p] means persion "p" is at "person[i, p]" in step i. The Noone is meaningless
+array[STEP, PERSON] of var SEAT: person;
 
 %------------------------------------------------------------------------------%
 % Constraints
@@ -61,31 +69,27 @@ array[1..MAX_STEP, 1..P] of var 1..S: person;
 %
 % bind initial and last seating
 %
-constraint
-	forall(i in 1..S) (
-		 seat[1, i] = Start[i]
-		 /\ seat[MAX_STEP, i] = Goal[i]
-	);
+constraint seat[1,..] = StartT /\ seat[MAX_STEP,..] = GoalT;
 
 %
 % bind person and seat
 %
 constraint
-	forall(i in 1..MAX_STEP) (
-		forall(p in 1..P) (
+	forall(i in STEP) (
+		forall(p in Person(1..P)) (
 			seat[i, person[i, p]] = p
 		)
 	);
 
 % person don't appear twice
 constraint
-	forall(i in 1..MAX_STEP) (
-		alldifferent_except_0 ([seat[i, s] | s in 1..S])
+	forall(i in STEP) (
+		all_different_except(seat[i, ..], {Noone})
 	);
 
 constraint redundant_constraint(
-	forall(i in 1..MAX_STEP) (
-		alldifferent([person[i, p] | p in 1..P])
+	forall(i in STEP) (
+		alldifferent(person[i, ..])
 	)
 );
 
@@ -97,20 +101,11 @@ constraint objective = step * P * MAX_STEP + cost;
 %
 % cost
 %
-constraint cost = sum([ 
-    sum(
-        [ bool2int(person[i, p] != person[i + 1, p]) 
-        | p in 1..P]
-    ) 
-| i in 1..MAX_STEP - 1
-]);
+constraint cost = sum(i in 1..MAX_STEP-1, p in Person(1..P))(person[i,p] != person[i+1,p]); 
 
 
 % Don't move after all seats are fixed.
-constraint
-	forall(i in 1..MAX_STEP) (
-		step < i -> forall(s in 1..S) (seat[i, s] = Goal[s])
-	);
+constraint forall(i in STEP) (step < i -> seat[i, ..] = GoalT);
 
 %
 % moving constraint
@@ -120,10 +115,10 @@ constraint
 %   * move to empty seat
 %
 constraint
-	forall(i in 1..MAX_STEP - 1, p in 1..P) (
+	forall(i in 1..MAX_STEP - 1, p in Person(1..P)) (
 	    person[i, p] != person[i + 1, p] -> (
-                (Can_swap[p] /\ person[i, p] = person[i + 1, seat[i, person[i + 1, p]]])
-	        \/  seat[i, person[i + 1, p]] = 0
+                (Can_swapT[p] /\ person[i, p] = person[i + 1, seat[i, person[i + 1, p]]])
+	        \/  seat[i, person[i + 1, p]] = Noone
         )
 	);
 
@@ -151,3 +146,4 @@ output [
 ];
 
 %------------------------------------------------------------------------------%
+
