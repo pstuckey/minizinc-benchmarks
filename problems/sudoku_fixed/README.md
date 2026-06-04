@@ -44,8 +44,6 @@ None — this is a pure **satisfaction** (`solve satisfy`) model.
 
 The model uses a fixed search annotation (`first_fail` variable selection, `indomain_split` value selection) applied to the flattened array of decision variables. The name _"sudoku_fixed"_ refers to this fixed search strategy. An alternative version using `dom_w_deg` (weighted degree) was the original; that annotation is commented out because `dom_w_deg` is not permitted in the MiniZinc Challenge.
 
-> **Note on uncertainty:** The appropriateness of the fixed search strategy may vary across instances and solvers. Performance on very large grids (e.g., 25×25) could differ significantly from solving standard 9×9 instances.
-
 ## Instances
 
 The benchmark data files (in `data/`) are 25×25 Sudoku puzzles drawn from a set of 91 instances originally distributed with the [Gecode](https://www.gecode.org/) constraint solver example `sudoku.cpp`. Five instances were used in the **MiniZinc Challenge 2023**:
