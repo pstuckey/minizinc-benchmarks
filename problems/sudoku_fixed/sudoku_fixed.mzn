@@ -27,9 +27,11 @@ include "globals.mzn";
 
 int: n;
 int: reg = ceil(sqrt(int2float(n))); % size of the regions
+constraint assert(n = reg*reg, "size n must be a perfect square\n");
+array[1..n, 1..n] of opt int: board;
+
 array[1..n, 1..n] of var 1..n: x;
 
-array[1..n, 1..n] of opt int: board;
 constraint forall (i, j in 1..n) (x[i, j] ~= board[i, j]);
 
 % solve :: int_search(array1d(x), dom_w_deg, indomain_split) satisfy;        
