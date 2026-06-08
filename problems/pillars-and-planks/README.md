@@ -64,9 +64,9 @@ The model prints:
 
 The map symbols represent plank ends/body and pillar edges/interior.
 
-## Notes and uncertainty
+## Notes 
 
-- The structural rules are clear from the constraints, but the real-world story (e.g., whether this is inspired by a specific puzzle/game or an engineering benchmark) is **not explicitly stated** in the model file.
+- The structural rules are clear from the constraints, but the problem is artificial.
 - Ground support is encoded using index `0` and `y = -1`, which is a modeling trick; beginners may initially find that non-obvious.
 
 ## Identifiable references
