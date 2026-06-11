@@ -38,14 +38,28 @@
 %  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 %  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 %
+% Updated by Peter Stuckey 06/2026 to use enumerated types
 %------------------------------------------------------------------------%
 
 include "table.mzn";
 include "inverse.mzn";
 
+enum RANK = { Ace, Two, Thr, Fou, Fiv, Six, Sev, Eig, Nin, Ten, Jac, Que, Kin };
+enum CARD = Spad(RANK) ++ Club(RANK) ++ Diam(RANK) ++ Hear(RANK);
+CARD: to_card(1..52: i) :: promise_total 
+      = let { RANK:r = to_enum(RANK, (i-1) mod 13 + 1); } in
+        if i <= 13 then Spad(r) 
+        elseif i <= 26 then Club(r)
+        elseif i <= 39 then Diam(r)
+        else Hear(r)
+        endif;
 
 % Table of matching pairs of cards
 array[1..416, 1..2] of int: neighbours;
+array[1..416, 1..2] of CARD: neighboursC = 
+     array2d(1..416,1..2,
+     [ to_card(neighbours[i,j]) | i in 1..416, j in 1..2 ]);
+
 
 %------------------------------------------------------------------------%
 % Parameters
@@ -53,37 +67,19 @@ array[1..416, 1..2] of int: neighbours;
 
 % Piles
 array[1..17, 1..3] of int: layout;
+array[1..17, 1..3] of CARD: layoutC = array2d(1..17,1..3,
+    [ to_card(layout[i,j]) | i in 1..17, j in 1..3]);  
 
-% Data
-%layout = array2d(1..17,1..3, [
-%31, 30, 8, 
-%45, 50, 19, 
-%37, 12, 47, 
-%24, 9, 18, 
-%16, 40, 20, 
-%38, 36, 49, 
-%11, 33, 51, 
-%39, 10, 14, 
-%3, 27, 46, 
-%29, 2, 35, 
-%4, 32, 17, 
-%15, 13, 5, 
-%23, 34, 28, 
-%48, 21, 52, 
-%22, 6, 42, 
-%44, 41, 26, 
-%25, 43, 7
-%]);
-
+                         
 
 %------------------------------------------------------------------------%
 % Variables
 %------------------------------------------------------------------------%
-
+enum POS = P(1..52);
 % Card at position
-array[1..52] of var 1..52: x;
+array[POS] of var CARD: x;
 % Position of card
-array[1..52] of var 1..52: y;
+array[CARD] of var POS: y;
 
 
 %------------------------------------------------------------------------%
@@ -91,13 +87,13 @@ array[1..52] of var 1..52: y;
 %------------------------------------------------------------------------%
 
 % Ace of Spades is first card
-constraint x[1] == 1;
+constraint x[P(1)] == Spad(Ace);
 
 
 % Consecutive cards match
 constraint
 	forall(i in 1..51) (
-		 table([x[i], x[i+1]], neighbours)
+		 table([x[P(i)], x[P(i+1)]], neighboursC)
 	);
 
 
@@ -108,8 +104,64 @@ constraint inverse(x, y) :: domain;
 % A card must be played before the one under it.
 constraint
 	forall(i in 1..17, j in 1..2) (
-		 y[layout[i,j]] < y[layout[i,j+1]]
+		 y[layoutC[i,j]] < y[layoutC[i,j+1]]
 	);
+
+
+
+%------------------------------------------------------------------------%
+% Conditional Symmetry breaking: 
+% See Ian P. Gent, Tom Kelsey, Steve Linton, Iain McDonald, Ian Miguel, and Barbara M. Smith.
+% Conditional symmetry breaking. In Proceedings of the 11th International Conference on
+% Principles and Practice of Constraint Programming CP2005, volume 3709 of LNCS, pages
+% 256–270. Springer, 2005.
+%------------------------------------------------------------------------%
+% Two cards with the same rank are symmetric if they are both available
+array[CARD] of int: pile = [ sum(i in 1..17)(exists(j in 1..3)(layoutC[i,j] = c)*i)
+                           | c in CARD ];
+array[CARD] of int: posn = [ sum(j in 1..3)(exists(i in 1..17)(layoutC[i,j] = c)*j)
+                           | c in CARD ];  
+constraint forall(r in RANK)
+                 (% Spades before Clubs
+                  let { CARD: spade = Spad(r);
+                        CARD: club = Club(r);
+                        CARD: diamond = Diam(r);
+                        CARD: heart = Hear(r);
+                        int: sn = posn[spade];
+                        int: sp = pile[spade];
+                        int: cn = posn[club];
+                        int: cp = pile[club];
+                        int: dn = posn[diamond];
+                        int: dp = pile[diamond];
+                        int: hn = posn[heart];
+                        int: hp = pile[heart]; } in
+                  % Spades before Clubs      
+                  ((forall(j in 1..sn-1)(y[layoutC[sp,j]] < y[club]) /\ 
+                  forall(j in cn+1..3)(y[spade] < y[layoutC[cp,j]])) -> 
+                  y[spade] < y[club]) /\
+                  % Spades before Diamonds      
+                  ((forall(j in 1..sn-1)(y[layoutC[sp,j]] < y[diamond]) /\ 
+                  forall(j in dn+1..3)(y[spade] < y[layoutC[dp,j]])) -> 
+                  y[spade] < y[diamond]) /\
+                  % Spades before Hearts      
+                  ((forall(j in 1..sn-1)(y[layoutC[sp,j]] < y[heart]) /\ 
+                  forall(j in hn+1..3)(y[spade] < y[layoutC[hp,j]])) -> 
+                  y[spade] < y[heart]) /\
+                  % Clubs before Diamonds      
+                  ((forall(j in 1..cn-1)(y[layoutC[cp,j]] < y[diamond]) /\ 
+                  forall(j in dn+1..3)(y[club] < y[layoutC[dp,j]])) -> 
+                  y[spade] < y[diamond]) /\
+                  % Clubs before Hearts      
+                  ((forall(j in 1..cn-1)(y[layoutC[cp,j]] < y[heart]) /\ 
+                  forall(j in hn+1..3)(y[club] < y[layoutC[hp,j]])) -> 
+                  y[club] < y[heart]) /\
+                  % Diamonds before Hearts      
+                  ((forall(j in 1..dn-1)(y[layoutC[dp,j]] < y[heart]) /\ 
+                  forall(j in hn+1..3)(y[diamond] < y[layoutC[hp,j]])) -> 
+                  y[diamond] < y[heart])
+                  );
+
+
 
 
 %------------------------------------------------------------------------%
