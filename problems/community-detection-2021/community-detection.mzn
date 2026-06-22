@@ -14,30 +14,38 @@ include "globals.mzn";
 %------------------------------------------------------------------------------%
 % Input and Derived Parameters
 
-array [int, int] of int: A; % Adjacency matrix
-set of int: NODE = assert(
+array [int, int] of 0..1: A; % Adjacency matrix
+constraint assert(
     index_set_1of2(A) = index_set_2of2(A),
-    "Invalid adjacency matrix",
-    index_set_1of2(A)
+    "Invalid adjacency matrix"
 );
-int: N = card(NODE);
+int: N = card(index_set_1of2(A));
+enum NODE = V(1..N);
+% well typed data
+array[NODE,NODE] of int: AN = [ (V(i),V(j)): A[i,j] | i,j in 1..N ];
 
 int: max_communities; % Max number of communities
-set of int: COMMUNITY = 1..max_communities;
+enum COMMUNITY = C(1..max_communities);
 
 % Pairs of nodes which must be in the same community
 array [int, 1..2] of int: same_community;
-set of int: SAME = index_set_1of2(same_community);
+enum SAME = S(index_set_1of2(same_community));
+array[SAME] of tuple(NODE,NODE): t_same = 
+     [ S(i): ( V(same_community[i,1]), V(same_community[i,2]) ) 
+     | i in index_set_1of2(same_community) ];
 
 % Pairs of nodes which must not be in the same community
 array [int, 1..2] of int: diff_community;
-set of int: DIFF = index_set_1of2(diff_community);
+enum DIFF = D(index_set_1of2(diff_community));
+array[DIFF] of tuple(NODE,NODE): t_diff = 
+     [ D(i): (V(diff_community[i,1]),V(diff_community[i,2]))  
+     | i in index_set_1of2(diff_community)];
 
-int: l = sum (array1d(A)); % Number of stubs
-array [NODE] of int: k = [sum (j in NODE) (A[i, j]) | i in NODE]; % Node degrees
+int: l = sum (AN); % Number of stubs
+array [NODE] of int: k = [sum (j in NODE) (AN[i, j]) | i in NODE]; % Node degrees
 
 % Modularity matrix (multiplied by l so no fractions)
-array [NODE, NODE] of int: B = array2d(NODE, NODE, [l * A[i, j] - k[i] * k[j] | i, j in NODE]);
+array [NODE, NODE] of int: B = array2d(NODE, NODE, [l * AN[i, j] - k[i] * k[j] | i, j in NODE]);
 
 % Objective bounds (compiler should be able to tighten using same/diff_community)
 int: obj_lb = sum (i, j in NODE where i < j /\ B[i, j] < 0) (B[i, j]);
@@ -55,8 +63,8 @@ var obj_lb..obj_ub: objective = sum (i, j in NODE where i < j /\ x[i] = x[j]) (B
 
 constraint symmetry_breaking_constraint(seq_precede_chain(x));
 
-constraint forall (s in SAME) (x[same_community[s, 1]]  = x[same_community[s, 2]]);
-constraint forall (d in DIFF) (x[diff_community[d, 1]] != x[diff_community[d, 2]]);
+constraint forall (s in t_same) (x[s.1]  = x[s.2]);
+constraint forall (d in t_diff) (x[d.1] != x[d.2]);
 
 constraint global_cardinality_low_up(
     x, 
