@@ -34,9 +34,9 @@
 
 include "all_equal.mzn";
 include "global_cardinality.mzn";
-include "lex_lesseq.mzn";
 include "regular.mzn";
 include "value_precede_chain.mzn";
+include "var_sqr_sym.mzn";
 
 int: n;  % board dimensions
 int: q;  % number of armies
@@ -111,51 +111,4 @@ output [
     | i,j in 1..n] ++
   ["n = \(n);\nq = \(q);\ncounts = \(counts);\nobjective = \(objective);\n"]
     ;
-
-predicate var_sqr_sym(array[int,int] of var int: x) =
-  let { int: n = card(index_set_1of2(x));
-        int: n2 = card(index_set_2of2(x));
-        constraint assert(n = n2,"square symmetry applied to non-square array");
-        int: l = n * n;
-        array[1..l] of var int:
-          y = [ x[i,j] | i in index_set_1of2(x),
-                         j in index_set_2of2(x) ];
-        array[1..8,1..l] of 1..l:
-          p = array2d(1..8,1..l,
-            [ if k == 1 then i*n + j - n 
-              elseif k == 2 then (n - j)*n + i           % r270
-              elseif k == 3 then (n - i)*n + (n - j)+1   % r180
-              elseif k == 4 then (j*n - n) + (n - i + 1) % r90
-              elseif k == 5 then (n - i)*n + j           % x flip
-              elseif k == 6 then (i*n - n) + (n - j + 1) % y flip
-              elseif k == 7 then (n - j)*n + (n - i + 1) % d2 flip
-              else               (j*n - n) + i           % d1 flip
-              endif
-            | k in 1..8, i,j in 1..n]) }
-  in var_perm_sym(y,p);
-
-predicate var_perm_sym(array[int] of var int: x,
-                       array[int,int] of int: p) =
-  let { int: l = min(index_set_1of2(p)),
-        int: u = max(index_set_1of2(p)),
-	array[1..length(x)] of var int:
-          y = [ x[i] | i in index_set(x) ] }
-  in
-  forall (i, j in l..u where i != j) (
-    var_perm_sym_pairwise(y,
-      [ p[i,k] | k in index_set_2of2(p) ],
-      [ p[j,k] | k in index_set_2of2(p) ])
-  );
-
-predicate var_perm_sym_pairwise(
-    array[int] of var int: x,
-    array[int] of int: p1,
-    array[int] of int: p2) =
-  let { int: n = length(x),
-        array[1..n] of 1..n:
-          invp1 = [ j | i, j in 1..n
-                      where p1[j] = i ] }
-  in
-  lex_lesseq(x, [ x[p2[invp1[i]]] | i in 1..n ]);
-
 
