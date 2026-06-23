@@ -13,7 +13,7 @@ In plain terms: we want to deliver the requested intensity map while using a pla
 ## Inputs (parameters)
 
 - `m`, `n`: number of rows and columns.
-- `Intensity[Rows, Columns]`: required intensity at each cell.
+- `Intensity[ROW, COL]`: required intensity at each cell.
 - Derived constants:
   - `Bt_max`: maximum intensity value in the grid.
   - `BTimes = 1..Bt_max`: possible beam-on times per segment.
@@ -63,14 +63,8 @@ Reason: reducing `Beamtime` by 1 always improves objective more than any possibl
 - `Q` is the detailed explanation of dose delivery; `N`, `K`, `Beamtime` are aggregate quality measures.
 - Objective prioritizes shorter treatment time, then fewer segments.
 
-## Uncertainty / assumptions
+.
 
-- The file itself does not include a full clinical machine model, only a mathematical abstraction of segment deliverability via increment bounds.
-- Terms like "shape matrix" are inferred from variable names/comments in the model.
-- If you need clinical interpretation (e.g., MLC hardware specifics), additional source documentation would be required.
+## References
 
-## Identifiable references / provenance
-
-- Header comment: "Radiation problem, MiniZinc 2.0.4 version".
-- `metadata.json` indicates this benchmark appears in MiniZinc Challenge instance sets (years listed: 2008, 2012, 2013, 2015, 2020).
-- No explicit paper citation is embedded in `radiation.mzn` or `metadata.json`.
+- D. Baatar, N. Boland, S. Brand, and P. J. Stuckey. CP and IP approaches to cancer radiotherary delivery optimization. Constraints, 16(2):173-194, 2011.
