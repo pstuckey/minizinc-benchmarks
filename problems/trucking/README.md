@@ -9,17 +9,17 @@ You are given:
 - each truck’s load capacity (`Loads[i]`) and cost per use (`Cost[i]`),
 - demand per period (`Demand[t]`).
 
-The model decides, for each truck and each time period, whether the truck is used (`1`) or not (`0`).
+The model decides, for each truck and each time period, whether the truck is used (`true`) or not (`false`).
 
 ---
 
 ## Main decision variables
-- `x[i,t]` (binary):
-  - `1` if truck `i` is used in period `t`
-  - `0` otherwise
+- `x[i,t]` (Boolean):
+  - `true` if truck `i` is used in period `t`
+  - `false` otherwise
 - `total_cost` (integer): total cost of all selected truck usages
 
-So the key decision is the binary usage matrix `x` of size `N × T`.
+So the key decision is the Boolean usage matrix `x` of size `N × T`.
 
 ---
 
@@ -53,25 +53,5 @@ To run this model, data must provide at least:
 
 ---
 
-## Output produced by the model
-The model prints:
-- total cost (`total_cost`)
-- a readable table of `x[i,t]`
-- an `array2d(...)` representation of `x` for reuse
 
----
 
-## Uncertainty / assumptions to be aware of
-- The comments suggest a practical trucking scheduling story, but the exact business interpretation (e.g., why only `Truck1` and `Truck2` have spacing rules) is not fully documented in the model.
-- Costs are modeled per truck-use per period; there are no explicit fixed startup costs, travel times, route limits, or fleet availability constraints beyond the binary usage and the two special truck rules.
-- Demand is treated as a minimum required load each period (over-supply is allowed because constraint is `>=`).
-
----
-
-## Identifiable references
-From the model header comments:
-- Author: **Jakob Puchinger**
-- Date: **December 2007**
-- Note: “Original model comes from Peters Student Tim” (as written in source comment)
-
-No external paper/report citation is explicitly provided in the model file.
