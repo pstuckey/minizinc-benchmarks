@@ -69,4 +69,4 @@ The model prints:
 - The model header says it is inspired by this post:  
   <https://blog.computationalcomplexity.org/2023/06/can-you-put-n-pennies-on-n-x-n.html>
 - This task is related in spirit to classic distinct-distance questions in combinatorial geometry (for example, Erdős-style distinct-distance problems).
-- I am not fully sure of a single canonical academic paper for this exact optimization variant (“maximize pennies on an `n × n` grid with all pairwise distances distinct”). If you need a strict literature citation for this exact formulation, a domain expert should confirm the best primary source.
+
