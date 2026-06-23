@@ -1,6 +1,12 @@
 %-----------------------------------------------------------------------------%
 % Radiation problem, MiniZinc 2.0.4 version
 %
+% Revised by Peter Stuckey June 2026
+%
+% Model from 
+% D. Baatar, N. Boland, S. Brand, and P. J. Stuckey. 
+% CP and IP approaches to cancer radiotherary delivery optimization. 
+% Constraints, 16(2):173-194, 2011.
 %-----------------------------------------------------------------------------%
 
 %-----------------------------------------------------------------------------%
@@ -9,18 +15,17 @@
 
 int: m;  % Rows
 int: n;  % Columns
-
-set of int: Rows    = 1..m;
-set of int: Columns = 1..n;
+enum ROW = R(1..m);
+enum COL = C(1..m);
 
 	% Intensity matrix
-array[Rows, Columns] of int: Intensity;
+array[ROW, COL] of int: Intensity;
 
 
 set of int: BTimes = 1..Bt_max;
 
-int: Bt_max   = max(i in Rows, j in Columns) (Intensity[i,j]);
-int: Ints_sum = sum(i in Rows, j in Columns) (Intensity[i,j]);
+int: Bt_max   = max(Intensity);
+int: Ints_sum = sum(Intensity);
 
 %-----------------------------------------------------------------------------%
 % Variables
@@ -37,7 +42,7 @@ array[BTimes] of var 0..m*n: N;
 
 	% Q[i,j,b] is the number of shape matrices with associated beam-on time
 	% b that expose cell (i,j)
-array[Rows, Columns, BTimes] of var 0..m*n: Q;
+array[ROW, COL, BTimes] of var 0..m*n: Q;
 
 %-----------------------------------------------------------------------------%
 % Constraints
@@ -48,13 +53,13 @@ array[Rows, Columns, BTimes] of var 0..m*n: Q;
 constraint
 	Beamtime = sum(b in BTimes) (b * N[b])
 	/\
-	K = sum(b in BTimes) (N[b])
+	K = sum(N)
 	/\
-	forall(i in Rows, j in Columns)
+	forall(i in ROW, j in COL)
 		( Intensity[i,j] = sum([b * Q[i,j,b] | b in BTimes]) )
 	/\
-	forall(i in Rows, b in BTimes)
-		( upper_bound_on_increments(N[b], [Q[i,j,b] | j in Columns]) );
+	forall(i in ROW, b in BTimes)
+		( upper_bound_on_increments(N[b], [ Q[i,j,b] | j in COL]) );
 
 
 predicate upper_bound_on_increments(var int: N_b, array[int] of var int: L) =
@@ -76,20 +81,10 @@ var obj_min..obj_max: objective = (m*n + 1) * Beamtime + K;
 solve 
     :: int_search(
 		[Beamtime] ++ N ++
-	    	[Q[i,j,b] | i in Rows, j in Columns, b in BTimes ],
+	    	[Q[i,j,b] | i in ROW, j in COL, b in BTimes ],
 		input_order, indomain_split, complete)
 	minimize objective;
 		% really: (Beamtime, K),  i.e. in lexicographic order
-
-%-----------------------------------------------------------------------------%
-
-output [
-	"objective = \(objective);\n",
-    "Beamtime = \(Beamtime);\n",
-    "K = \(K);\n",
-    "N = \(N);\n",
-    "Q = array3d(\(Rows), \(Columns), \(BTimes), \(Q));\n"
-];
 
 %-----------------------------------------------------------------------------%
 %-----------------------------------------------------------------------------%
