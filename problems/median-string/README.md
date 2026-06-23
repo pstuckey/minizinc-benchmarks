@@ -48,7 +48,7 @@ The `lcs_global` predicate encodes a standard dynamic-programming recurrence for
 - If the second string has a padding character at position `j` (`S2[j] = 0`): the position is skipped (`T[i,j] = T[i,j-1]`).
 - Otherwise: the best of an insertion or deletion is taken (`T[i,j] = min(T[i-1,j]+1, T[i,j-1]+1)`).
 
-> **Note:** The predicate is named `lcs_global`, which may suggest a relationship to Longest Common Subsequence (LCS). The indel edit distance between two strings is indeed equal to `|S1| + |S2| − 2 × LCS(S1, S2)`, so the two formulations are mathematically equivalent. A reviewer familiar with the original source of this model may be able to clarify the naming choice.
+> **Note:** The predicate is named `lcs_global`, because of a relationship to Longest Common Subsequence (LCS). The indel edit distance between two strings is indeed equal to `|S1| + |S2| − 2 × LCS(S1, S2)`, so the two formulations are mathematically equivalent. 
 
 ## References
 
@@ -58,4 +58,6 @@ The Median String Problem has been studied extensively in the literature. Releva
 - Kohonen, T. (1985). _Median strings_. Pattern Recognition Letters, 3(5), 309–313.
 - Sim, J. S., & Park, K. (2003). _The consensus string problem for a metric is NP-complete_. Journal of Discrete Algorithms, 1(1), 111–120.
 
-> **Note for reviewers:** If this model originates from a specific paper or benchmark suite, please add the corresponding citation here.
+The definition of `lcs_global` was used to compare with a native propagator for string edit distance in
+
+- Felix Winter, Nyret Musliu, and Peter J. Stuckey. Explaining propagators for string edit distance constraints. In Vincent Conitzer and Fei Sha, editors, Proceedings of the Thirty-Fourth AAAI Conference on Artificial Intelligence (AAAI-20), pages 1676-1683. AAAI Press, 2020.
