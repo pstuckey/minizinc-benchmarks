@@ -18,20 +18,22 @@ The model is parameterised by:
 | Parameter                      | Description                       |
 | ------------------------------ | --------------------------------- |
 | `N`                            | Number of nodes in the graph      |
+| `NODE`                         | Enumerated node type              |
 | `Start`                        | Source node (net outflow = 1)     |
 | `End`                          | Destination node (net inflow = 1) |
 | `M`                            | Number of directed edges (arcs)   |
+| `EDGE`                         | Enumerated edge type              | 
 | `L[e]`                         | Length (weight/cost) of edge `e`  |
 | `Edge_Start[e]`, `Edge_End[e]` | Tail and head node of edge `e`    |
 
 ## Decision Variables
 
 ```
-array[1..M] of var 0..1: x
+array[EDGE] of var bool: x
 ```
 
-`x[e]` is a **binary** variable: it equals `1` if edge `e` is included in the
-chosen path, and `0` otherwise.
+`x[e]` is a **Boolean** variable: it equals `true` if edge `e` is included in the
+chosen path, and `false` otherwise.
 
 ## Constraints
 
@@ -51,7 +53,7 @@ Together these constraints guarantee that the selected edges form a valid
 ## Objective
 
 ```minizinc
-solve minimize sum(e in Edges)( L[e] * x[e] );
+solve minimize sum(e in EDGE)( L[e] * x[e] );
 ```
 
 Minimise the total length of the selected edges — i.e. find the shortest path.
@@ -68,10 +70,6 @@ Although the shortest path problem is solvable in polynomial time by
 specialised algorithms (e.g. Dijkstra's), the MiniZinc model expresses it as a
 **binary integer program**. The difficulty for a general-purpose CP/MIP solver
 therefore depends on how well it exploits the network-flow structure.
-
-> **Note:** No source beyond the model header and the MiniZinc Challenge 2008
-> records has been identified. The origin of the specific instance generator is
-> not documented in this repository.
 
 ## References
 
