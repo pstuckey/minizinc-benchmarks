@@ -3,7 +3,7 @@
 % Jakob Puchinger
 % December 2007
 % vim: ft=zinc ts=4 sw=4 et tw=0
-% Original model comes from Peters Student Tim
+% 
 % There are N Trucks which have to can be used in every time period,
 % Each truck can transport a given Load of material.
 % Each truck has an associated cost.
@@ -11,49 +11,45 @@
 % Truck1 and Truck2 have some further constraints, disallowing
 % them to be used more than once in consecutive or two consecutive time periods.
 % The goal is to minimise the cost
+% Uodated June 2026 Peter Stuckey
 %------------------------------------------------------------------------------%
 
     % Time Periods
 int: T;
+set of int: TIME = 1..T;
     % Trucks
 int: N;
+enum TRUCK = Truck(1..N);
 
 1..N: Truck1;
 1..N: Truck2;
+TRUCK: TRUCK1 = Truck(Truck1);
+TRUCK: TRUCK2 = Truck(Truck2);
 
-array[1..T] of int: Demand;
-array[1..N] of int: Cost;
-array[1..N] of int: Loads;
+array[TIME] of int: Demand;
+array[TRUCK] of int: Cost;
+array[TRUCK] of int: Loads;
 
-array[1..N, 1..T] of var 0..1: x;
+array[TRUCK, TIME] of var bool: x;
 
 constraint
-    forall(t in 1..T)(
-        sum(i in 1..N)( Loads[i] * x[i,t]) >= Demand[t] 
-            %:: colgen_subproblem_constraint("sp1", "mip", t)
+    forall(t in TIME)(
+        sum(i in TRUCK)( Loads[i] * x[i,t]) >= Demand[t] 
     );
 
-constraint
+constraint % Truck1 can only be used once in each three consec times
     forall(tau in 1..T-2)(
-        sum(t in tau..tau+2)( x[Truck1, t] ) <= 1
+        sum(t in tau..tau+2)( x[TRUCK1, t] ) <= 1
     );
 
-constraint
+constraint % Truck2 can only be used once in each two consec times
     forall(tau in 1..T-1)(
-        sum(t in tau..tau+1)( x[Truck2, t] ) <= 1
+        sum(t in tau..tau+1)( x[TRUCK2, t] ) <= 1
     );
 
-solve :: int_search( [ x[i,t] | i in 1..N, t in 1..T ], smallest, indomain_min)
+solve :: bool_search( [ x[i,t] | i in TRUCK, t in TIME ], smallest, indomain_min)
 minimize total_cost;
 
 var int: total_cost;
 constraint
-    total_cost = sum(i in 1..N)(sum(t in 1..T )( Cost[i] * x[i,t] ));
-
-output 
-[ "% Cost = ",  show(total_cost), "\n" ] ++ 
-[ "% X = \n%\t" ] ++
-[ show(x[i, t]) ++ if t = T then "\n%\t" else " " endif |
-    i in 1..N, t in 1..T ] ++ ["\n"] ++
-["x = array2d(1..", show(N), ", 1..", show(T), ", ", show(x), ");\n"] ++
-["total_cost = ", show(total_cost), ";\n"];
+    total_cost = sum(i in TRUCK)(sum(t in TIME)( Cost[i] * x[i,t] ));
