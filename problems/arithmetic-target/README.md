@@ -41,34 +41,25 @@ The core of the model is a binary expression tree stored as a flat array of up t
 | Variable       | Description                                                                                   |
 | -------------- | --------------------------------------------------------------------------------------------- |
 | `tree[i]`      | The type of node `i`: one of `Val` (a number), `Add`, `Sub`, `Mul`, `Div`, or `Null` (unused) |
-| `left[i]`      | Index of the left child of node `i` (0 if none)                                               |
-| `right[i]`     | Index of the right child of node `i` (0 if none)                                              |
-| `indexes[i]`   | Which input number is assigned to leaf node `i` (0 if not a leaf)                             |
-| `tree_vals[i]` | The numerical value computed by the subtree rooted at node `i`                                |
-| `lowest[i]`    | Index of the lowest-numbered node in the subtree rooted at `i`                                |
-| `highest[i]`   | Index of the highest-numbered node in the subtree rooted at `i`                               |
-| `tree_depth`   | Index of the last node actually used in the tree                                              |
+| `left[i]`      | Index of the left child of node `i`                                                |
+| `right[i]`     | Index of the right child of node `i`                                               |
+| `value[i]` | The numerical value computed by the subtree rooted at node `i`                                |
+| `root`         | The root node of the expression tree                                                      |
 | `used`         | How many input numbers are used in the expression                                             |
 
 ---
 
 ## Constraints
 
-1. **Tree shape**: The first portion of the node array (up to `tree_depth`) forms a valid binary tree. Each internal node has exactly two children, and leaves have none.
-
-2. **Number assignment**: Exactly `n − 1` leaves are used (one per `Val` node), each assigned a distinct input number from the `numbers` array. The remaining slots are marked `Null`.
-
-3. **Value propagation**: Each node's value (`tree_vals[i]`) is computed from its children according to its operation, or directly from `numbers[indexes[i]]` if it is a leaf.
-
-4. **Integer division**: When division is used, the numerator must be exactly divisible by the denominator.
+1. **Tree shape**: Each internal node has exactly two children, and leaves have none. Global cardinality constraints prevent a node appearing as child of two nodes.
+2. **Value propagation**: Each node's value (`tree_vals[i]`) is computed from its children according to its operation, or directly if it is a leaf if its used.
+3. **Integer division**: When division is used, the numerator must be exactly divisible by the denominator.
 
 5. **Symmetry breaking**: A large number of additional constraints are included to avoid counting equivalent expressions more than once. These cover:
    - Commutativity of addition and multiplication (`a + b` is the same as `b + a`).
    - Associativity of chains of the same operation.
    - Removal of trivial identities such as adding or multiplying by zero or one.
-   - Canonical ordering of operands with the same value.
-   - Equivalences arising from distributivity of multiplication and division over addition and subtraction.
-
+   - Canonical ordering of operands for symmetric operations.
 ---
 
 ## Objective
@@ -76,10 +67,10 @@ The core of the model is a binary expression tree stored as a flat array of up t
 The model minimises:
 
 $$
-\text{objective} = 10 \times |\,\text{tree\_vals}[1] - \text{target}\,| + \text{used}
+\text{objective} = 10 \times |\,\text{value}[root] - \text{target}\,| + \text{used}
 $$
 
-The factor of 10 ensures that **closeness to the target** is the primary goal, while the `used` term serves as a tiebreaker that prefers solutions using **fewer numbers**. The root of the tree (`tree_vals[1]`) is the final computed result.
+The factor of 10 ensures that **closeness to the target** is the primary goal, while the `used` term serves as a tiebreaker that prefers solutions using **fewer numbers**. The root of the tree (`value[root]`) is the final computed result.
 
 ---
 
@@ -93,7 +84,7 @@ For `numbers = [1, 2, 2, 3, 3, 5, 6, 6, 7, 8, 9]` and `target = 4108`, the model
 
 - The model is licensed under the MIT License (Copyright © 2022 Kelvin Davis).
 - The flat-array representation of a binary tree is a compact way to encode tree structure without requiring pointer-based data structures.
-- The many symmetry-breaking constraints are important for performance: without them, many structurally identical expressions would be explored repeatedly. Some of these constraints are noted in the model's comments as potentially experimental or unverified.
+- The many symmetry-breaking constraints are important for performance: without them, many structurally identical expressions would be explored repeatedly. 
 - If an exact solution exists (objective = `used`), it will be found; otherwise the closest achievable result is returned.
 
 ---
