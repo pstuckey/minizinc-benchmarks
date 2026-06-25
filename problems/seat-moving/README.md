@@ -25,7 +25,7 @@ and with the added twist that some people can directly swap seats with each othe
 
 | Variable       | Description                                              |
 | -------------- | -------------------------------------------------------- |
-| `seat[i, s]`   | Who sits in seat `s` at step `i` (0 = empty)             |
+| `seat[i, s]`   | Who sits in seat `s` at step `i` (or EMPTY)             |
 | `person[i, p]` | Which seat person `p` occupies at step `i`               |
 | `step`         | The actual number of steps required to reach the goal    |
 | `cost`         | Total number of individual person moves across all steps |
