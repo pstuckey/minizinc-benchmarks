@@ -19,104 +19,96 @@
 % LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 % OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 % SOFTWARE.
+% 
+% Revised version by Peter Stuckey June 2026
 
 include "globals.mzn";
 
-int: n = length(numbers);
-set of int: N = 1..n;
-set of int: M = 1..(2*n-1);
 array[int] of int: numbers;
 int: target;
+int: n = length(numbers);
+% nodes in the binary tree: NULL = dummy, leafs for each input numbers and 
+% internal OP nodes
+enum NODE = { NULL } ++ Leaf(1..n) ++ OP(1..n-1);
 
 % Binary Tree
-set of int: N_opt = {0} union N; % These sets are for values in
-set of int: M_opt = {0} union M; % the arrays
-enum Tokens = {Val, Add, Sub, Mul, Div, Null};
+enum TOKEN = {Val, Add, Sub, Mul, Div, Null};
 
-array[M] of var Tokens: tree;
-array[M] of var M_opt: left;
-array[M] of var M_opt: right;
-array[M] of var M_opt: lowest;
-array[M] of var M_opt: highest;
+array[NODE] of var TOKEN: tree; % operation, or Val if leaf
+array[NODE] of var NODE: left;  % left child
+array[NODE] of var NODE: right; % right child
+var NODE: root; % root of tree (largest used node)
+var 0..n: used = sum(i in Leaf(1..n))(tree[i] != Null);
 
-array[M] of var N_opt: indexes;
-constraint count(indexes, 0, n-1);
-constraint alldifferent_except_0(indexes);
+% the leaf nodes are only used or not, and have no children
+constraint forall(i in 1..n)(tree[Leaf(i)] in { Val, Null } /\
+                             left[Leaf(i)] = NULL /\
+                             right[Leaf(i)] = NULL);
+% The NULL node is never used                             
+constraint tree[NULL] = Null /\ left[NULL] = NULL /\ right[NULL] = NULL;
 
-% tree (array) has n leaves
-constraint count(tree, Val, n);
 
-% separate tree from unused items
-var M: tree_depth = highest[1];
-var N: used;
-constraint 2*used-1 = tree_depth;
-
-% Constrain leaves and nodes
-constraint forall (i in 1..tree_depth) (
-  is_leaf(i) \/ is_node(i)
-);
+% Constrain all items
+constraint forall (i in OP(1..n-1)) 
+ (tree[i] != Val /\ left[i] < i /\ right[i] < i);
 % Constrain unused items
-constraint forall (i in M where i > tree_depth) (
-  is_unused(i)
-);
-
-% Leaves have no children are the highest and lowest nodes in their subtree
-predicate is_leaf(var M: i) = (
-  tree[i] = Val /\
-  left[i] == 0 /\
-  right[i] == 0 /\
-  highest[i] == i /\
-  lowest[i] == i /\
-  indexes[i] != 0 /\
-  true
-);
-
+constraint forall (i in NODE where i > root) 
+ (tree[i] = Null /\ left[i] = NULL /\ right[i] = NULL);
+% Constrain used items
+constraint forall (i in 1..n-1 where OP(i) <= root) (is_node(OP(i)));
 % node constraint
-predicate is_node(var M: i) = (
+predicate is_node(var NODE: i) = (
   tree[i] != Val /\ tree[i] != Null /\
   tree[left[i]] != Null /\ tree[right[i]] != Null /\
-  left[i] > i /\
-  left[i] = i + 1 /\
-  right[i] > i /\
-  right[i] > left[i] /\
-  right[i] > highest[left[i]] /\
-  right[i] = highest[left[i]] + 1 /\
-  lowest[i] = i /\
-  highest[i] = highest[right[i]] /\
-  indexes[i] = 0 /\
+  left[i] < i /\
+  right[i] < i /\
   true
 );
 
-% unused constraint
-predicate is_unused(var M: i) = (
-  (tree[i] = Null \/ tree[i] = Val) /\
-  left[i] = 0 /\
-  right[i] = 0 /\
-  (tree[i] = Val -> indexes[i] != 0) /\
-  (tree[i] = Null -> indexes[i] = 0) /\
-  lowest[i] = 0 /\
-  highest[i] = 0 /\
-  true
-);
+% Each node is used at most once in left and right (tree)
+constraint global_cardinality(left ++ right, NODE, [0 | i in 1..2*n], [4*n] ++ [ 1 | i in 1..2*n-1 ]);
 
-% Tree subtree values
-array[M] of var 0..10*target: tree_vals;
-constraint forall (i in M) (
-  (tree[i] == Val -> tree_vals[i] = numbers[indexes[i]]) /\
-  (tree[i] == Add -> tree_vals[i] = tree_vals[left[i]] + tree_vals[right[i]]) /\
-  (tree[i] == Sub -> tree_vals[i] = tree_vals[left[i]] - tree_vals[right[i]]) /\
-  (tree[i] == Mul -> tree_vals[i] = tree_vals[left[i]] * tree_vals[right[i]]) /\
-  (tree[i] == Div -> (
-    tree_vals[i] = tree_vals[left[i]] div tree_vals[right[i]] /\
-    tree_vals[left[i]] mod tree_vals[right[i]] == 0
-  )) /\
-  (tree[i] == Null -> tree_vals[i] = 0)
-);
 
-/*constraint tree_vals[1] = target;*/
+% value of each node
+set of int: VRANGE = 0..10*target;
+array[NODE] of var VRANGE: value;
+constraint value[NULL] = 0;
+% leafs are there own value if used
+constraint forall(i in 1..n)
+           (value[Leaf(i)] = numbers[i]*(tree[Leaf(i)] = Val));          
+           
+constraint forall(i in 1..n-1)
+           (let { NODE: node = OP(i);
+                  array[TOKEN] of var int: v = 
+                  [ 0, % Val not possible
+                    value[left[node]] + value[right[node]], % Add                    
+                    value[left[node]] - value[right[node]], % Sub
+                    value[left[node]] * value[right[node]], % Mul
+                    safediv(value[left[node]],value[right[node]]), % Div (non-failing)
+                    0];  % Null
+            } in
+            % compute the value of this node
+            value[node] = v[tree[node]] /\
+            % enforce that division is exact
+            if tree[node] = Div then 
+               value[left[node]] mod value[right[node]] = 0
+            endif         
+            );
+           
+                        
+function var int: safediv(var int: x, var int: y) :: promise_total 
+         = 
+         if y = 0 then 0 else x div y endif;    
+                             
+                                                                               
+var int: objective = 10*abs(value[root] - target) + used;
+solve :: seq_search([
+           int_search([root], input_order, indomain_min),
+           int_search(tree, input_order, indomain_min),
+           int_search(left, input_order, indomain_min),
+           int_search(right, input_order, indomain_min)])
+   minimize objective;
 
-var int: objective = 10*abs(tree_vals[1] - target) + used;
-solve :: int_search([used] ++ indexes ++ tree, input_order, indomain_min) minimize objective;
 
 %/**
 % * Break Symmetry
@@ -134,41 +126,52 @@ solve :: int_search([used] ++ indexes ++ tree, input_order, indomain_min) minimi
 
 % Associativity of Addition: (a+b)+c = a+(b+c)
 constraint symmetry_breaking_constraint(
-  forall (i in M) (
+  forall (i in NODE) (
     tree[i] = Add -> tree[left[i]] != Add
   )
 );
+
 % Identity of Addition: a = 0+a = a+0
 constraint symmetry_breaking_constraint(
-  forall (i in M) (
-    tree[i] = Add -> (tree_vals[left[i]] != 0 /\ tree_vals[right[i]] != 0)
+  forall (i in NODE) (
+    tree[i] = Add -> (value[left[i]] != 0 /\ value[right[i]] != 0)
   )
 );
 % Associativity of Multiplication: (a*b)*c = a*(b*c)
 constraint symmetry_breaking_constraint(
-  forall (i in M) (
+  forall (i in NODE) (
     tree[i] = Mul -> tree[left[i]] != Mul
   )
 );
 % Identity of Multiplication: a = 1*a = a*1
 constraint symmetry_breaking_constraint(
-  forall (i in M) (
-    tree[i] = Mul -> (tree_vals[left[i]] != 1 /\ tree_vals[right[i]] != 1)
+  forall (i in NODE) (
+    tree[i] = Mul -> (value[left[i]] != 1 /\ value[right[i]] != 1)
   )
 );
-% Symmetry of Addition and Multiplication: a+b = b+a and a*b = b*a
-constraint symmetry_breaking_constraint(
-  forall (i in M) (
-    (tree[i] == Add \/ tree[i] == Mul) -> tree[left[i]] <= tree[right[i]]
-  )
-);
+
 % (a-b)-c = a-(b+c)
 constraint symmetry_breaking_constraint(
-  forall (i in M) (
+  forall (i in NODE) (
     tree[i] = Sub -> tree[left[i]] != Sub
   )
 );
 
+% tree representation symmetry
+%% the children of an OP node are left before right if the operator 
+%% is commutative unless the right is a leaf and the left not 
+constraint symmetry_breaking_constraint(
+  forall(i in 1..n-1) (
+     let { NODE: node = OP(i); } in
+     node > root \/ 
+     tree[node] in { Sub, Div } \/
+     left[node] < right[node] \/
+     (right[node] in Leaf(1..n) /\ left[node] in OP(1..n-1))
+  )
+);
+
+
+/*
 % Distributivity of Multiplication
 % a*(b+c) = a*b + a*c
 %         = b*a + a*c
@@ -267,3 +270,9 @@ constraint symmetry_breaking_constraint(
   )
 );
 
+*/
+
+output [ if fix(tree[i]) != Null then
+            "\(i): \(tree[i]) L \(left[i]) R \(right[i]) : \(value[i])\n" 
+         else "" endif
+       | i in NODE ];
