@@ -62,4 +62,3 @@ The solver seeks an assignment of valid words to all clues such that this sum is
   - Ginsberg, M. L., Frank, M., Halpin, M. P., & Torrance, M. C. (1990). _Search lessons learned from crossword puzzles_. AAAI-90. ([link](https://aaai.org/papers/0210-aaai90-034-search-lessons-learned-from-crossword-puzzles/))
   - Beacham, A., Chen, X., Sillito, J., & van Beek, P. (2001). _Constraint programming lessons learned from crosswords_. IJCAI-01 Workshop on Modelling and Solving Problems with Constraints.
 
-> **Note for reviewers**: The origin and authorship of this specific MiniZinc model (and its associated data files) are not entirely clear. If you know the original source, please update this README accordingly.
